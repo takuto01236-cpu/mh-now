@@ -78,9 +78,8 @@
 
     <label for="userSelect">👤 あなたはだれ？</label>
     <select id="userSelect" onchange="changeUser()">
-        <option value="user1">じぶん (プレイヤーA)</option>
-        <option value="user2">フレンドB</option>
-        <option value="user3">フレンドC</option>
+        <option value="user1">じぶん (拓斗)</option>
+        <option value="user2">天飛</option>
     </select>
 
     <h2>🎯 あなたが今欲しいモンスター</h2>
@@ -91,7 +90,6 @@
         <div id="friendsStatus"></div>
     </div>
 
-    <!-- Firebase SDK の読み込み -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
@@ -112,14 +110,13 @@
 
         const monsters = [
             "リオレウス", "リオレイア", "ディアブロス", "ジンオウガ", 
-            "マガイマドゴ", "ネルギガンテ", "イビルジョー", "タマミツネ",
+            "マガイマド", "ネルギガンテ", "イビルジョー", "タマミツネ",
             "クシャルダオラ", "テオ・テスカトル"
         ];
 
         const userMap = {
-            user1: "たくと",
-            user2: "たかと",
-            user3: "フレンドC"
+            user1: "拓斗",
+            user2: "天飛"
         };
 
         let currentUser = "user1";
@@ -129,6 +126,7 @@
         window.changeUser = () => {
             currentUser = document.getElementById("userSelect").value;
             renderMyList();
+            renderFriendsList();
         };
 
         function renderMyList() {
@@ -146,22 +144,24 @@
         }
 
         function toggleMonster(monster, currentStatus) {
+            globalState[currentUser] = globalState[currentUser] || {};
+            globalState[currentUser][monster] = !currentStatus;
+            renderMyList();
+            renderFriendsList();
+
             set(ref(db, `sharing-list/${currentUser}/${monster}`), !currentStatus)
             .catch((error) => {
-                // 万が一保存に失敗した場合は、画面上だけでも色が変わるようにする
-                globalState[currentUser] = globalState[currentUser] || {};
-                globalState[currentUser][monster] = !currentStatus;
-                renderMyList();
+                console.log("Firebase save error");
             });
         }
 
-        // DBの監視（エラーが起きても無視して進むように対策）
+        // DBの監視
         onValue(ref(db, 'sharing-list'), (snapshot) => {
             globalState = snapshot.val() || {};
             renderMyList();
             renderFriendsList();
         }, (error) => {
-            console.log("Database connection wait / error");
+            console.log("Database connection error");
         });
 
         // 友達のリストを描画
@@ -189,7 +189,6 @@
             });
         }
 
-        // 【最重要】データベースの返事を待たずに、最初にとりあえず画面を描画する
         renderMyList();
         renderFriendsList();
     </script>
