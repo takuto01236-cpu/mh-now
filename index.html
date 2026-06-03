@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モンハンNow 狩りたい執念共有アプリ</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #ffffff;
+            --accent-color: #ff9800;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+        }
+        h1, h2 { text-align: center; color: var(--accent-color); }
+        select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .monster-card {
+            background-color: var(--card-bg);
+            border: 2px solid #444;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .monster-card.wanted {
+            border-color: var(--accent-color);
+            background-color: #3d2a10;
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
+        }
+        .friends-section {
+            margin-top: 30px;
+            border-top: 1px solid #444;
+            padding-top: 20px;
+        }
+        .friend-status {
+            background-color: var(--card-bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .friend-name { font-weight: bold; color: var(--accent-color); }
+        .wanted-tags { margin-top: 6px; }
+        .tag {
+            display: inline-block;
+            background: #444;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        .tag.active { background: var(--accent-color); color: #000; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>🍖 MH Now 探してますリスト</h1>
+
+    <label for="userSelect">👤 あなたはだれ？</label>
+    <select id="userSelect" onchange="changeUser()">
+        <option value="user1">じぶん (プレイヤーA)</option>
+        <option value="user2">フレンドB</option>
+        <option value="user3">フレンドC</option>
+    </select>
+
+    <h2>🎯 あなたが今欲しいモンスター</h2>
+    <div class="container" id="monsterGrid"></div>
+
+    <div class="friends-section">
+        <h2>👥 みんなが探しているモンスター</h2>
+        <div id="friendsStatus"></div>
+    </div>
+
+    <!-- Firebase SDK の読み込み -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+
+        // あなた専用の設定値を適応済みです
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1XKxMDakhQ4hYKBpSEkof9oLz8YMyBzE",
+            authDomain: "mh-now-61a3c.firebaseapp.com",
+            databaseURL: "https://mh-now-61a3c-default-rtdb.firebaseio.com",
+            projectId: "mh-now-61a3c",
+            storageBucket: "mh-now-61a3c.firebasestorage.app",
+            messagingSenderId: "813261960972",
+            appId: "1:813261960972:web:6f6daa3767a42a5d7f7b29",
+            measurementId: "G-ZXZRERG20V"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // モンスターリスト（自由に変更・追加してください）
+        const monsters = [
+           "", "クルルヤック","リオレウス", "リオレイア", "ディアブロス", "", "金レイア",
+            "マガイマド", "ネルギガンテ", "イビルジョー", "タマミツネ",
+            "クシャルダオラ", "テオ・テスカトル"
+        
+
+        // ユーザー名マッピング（友達の本名などに書き換えると便利です）
+        const userMap = {
+            user1: "たくと",
+            user2: "たかと",
+            user3: "フレンドC"
+        };
+
+        let currentUser = "user1";
+        let globalState = {};
+
+        // 画面初期化
+        const monsterGrid = document.getElementById("monsterGrid");
+        window.changeUser = () => {
+            currentUser = document.getElementById("userSelect").value;
+            renderMyList();
+        };
+
+        // 自分のチェックリストを描画
+        function renderMyList() {
+            monsterGrid.innerHTML = "";
+            const myData = globalState[currentUser] || {};
+            
+            monsters.forEach(monster => {
+                const isWanted = myData[monster] || false;
+                const card = document.createElement("div");
+                card.className = `monster-card ${isWanted ? 'wanted' : ''}`;
+                card.innerText = monster;
+                card.onclick = () => toggleMonster(monster, isWanted);
+                monsterGrid.appendChild(card);
+            });
+        }
+
+        // チェックの切り替えをDBに保存
+        function toggleMonster(monster, currentStatus) {
+            set(ref(db, `sharing-list/${currentUser}/${monster}`), !currentStatus);
+        }
+
+        // DBのデータ変更をリアルタイム監視
+        onValue(ref(db, 'sharing-list'), (snapshot) => {
+            globalState = snapshot.val() || {};
+            renderMyList();
+            renderFriendsList();
+        });
+
+        // 友達のリストを描画
+        function renderFriendsList() {
+            const friendsStatusDiv = document.getElementById("friendsStatus");
+            friendsStatusDiv.innerHTML = "";
+
+            Object.keys(userMap).forEach(userKey => {
+                if (userKey === currentUser) return;
+
+                const userData = globalState[userKey] || {};
+                const wantedMonsters = Object.keys(userData).filter(key => userData[key] === true);
+
+                const friendDiv = document.createElement("div");
+                friendDiv.className = "friend-status";
+                
+                let tagsHtml = wantedMonsters.map(m => `<span class="tag active">${m}</span>`).join("");
+                if (wantedMonsters.length === 0) tagsHtml = "<span class='tag'>特になし</span>";
+
+                friendDiv.innerHTML = `
+                    <div class="friend-name">${userMap[userKey]}</div>
+                    <div class="wanted-tags">${tagsHtml}</div>
+                `;
+                friendsStatusDiv.appendChild(friendDiv);
+            });
+        }
+    </script>
+</body>
+</html>
