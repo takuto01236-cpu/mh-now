@@ -96,7 +96,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
-        // あなた専用の設定値を適応済みです
         const firebaseConfig = {
             apiKey: "AIzaSyD1XKxMDakhQ4hYKBpSEkof9oLz8YMyBzE",
             authDomain: "mh-now-61a3c.firebaseapp.com",
@@ -111,31 +110,27 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // モンスターリスト（自由に変更・追加してください）
         const monsters = [
-           "パオルムー亜種","パオルムー","クルルヤック","リオレウス", "リオレイア", "ディアブロス", "", "金レイア",
-            "マガイマド", "ネルギガンテ", "イビルジョー", "タマミツネ",
+            "リオレウス", "リオレイア", "ディアブロス", "ジンオウガ", 
+            "マガイマドゴ", "ネルギガンテ", "イビルジョー", "タマミツネ",
             "クシャルダオラ", "テオ・テスカトル"
-        
+        ];
 
-        // ユーザー名マッピング（友達の本名などに書き換えると便利です）
         const userMap = {
-            user1: "たくと",
-            user2: "たかと",
+            user1: "プレイヤーA",
+            user2: "フレンドB",
             user3: "フレンドC"
         };
 
         let currentUser = "user1";
         let globalState = {};
 
-        // 画面初期化
         const monsterGrid = document.getElementById("monsterGrid");
         window.changeUser = () => {
             currentUser = document.getElementById("userSelect").value;
             renderMyList();
         };
 
-        // 自分のチェックリストを描画
         function renderMyList() {
             monsterGrid.innerHTML = "";
             const myData = globalState[currentUser] || {};
@@ -150,16 +145,23 @@
             });
         }
 
-        // チェックの切り替えをDBに保存
         function toggleMonster(monster, currentStatus) {
-            set(ref(db, `sharing-list/${currentUser}/${monster}`), !currentStatus);
+            set(ref(db, `sharing-list/${currentUser}/${monster}`), !currentStatus)
+            .catch((error) => {
+                // 万が一保存に失敗した場合は、画面上だけでも色が変わるようにする
+                globalState[currentUser] = globalState[currentUser] || {};
+                globalState[currentUser][monster] = !currentStatus;
+                renderMyList();
+            });
         }
 
-        // DBのデータ変更をリアルタイム監視
+        // DBの監視（エラーが起きても無視して進むように対策）
         onValue(ref(db, 'sharing-list'), (snapshot) => {
             globalState = snapshot.val() || {};
             renderMyList();
             renderFriendsList();
+        }, (error) => {
+            console.log("Database connection wait / error");
         });
 
         // 友達のリストを描画
@@ -186,6 +188,10 @@
                 friendsStatusDiv.appendChild(friendDiv);
             });
         }
+
+        // 【最重要】データベースの返事を待たずに、最初にとりあえず画面を描画する
+        renderMyList();
+        renderFriendsList();
     </script>
 </body>
 </html>
