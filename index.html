@@ -70,6 +70,10 @@
             height: 100%;
             object-fit: cover;
             display: none; 
+            z-index: 2;
+        }
+        .monster-icon-wrapper span {
+            z-index: 1;
         }
 
         .monster-name {
@@ -155,7 +159,6 @@
     <h2>🎯 あなたが今欲しいモンスター</h2>
     <div class="container" id="monsterGrid"></div>
 
-    <!-- Firebase SDK の読み込み -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
@@ -174,7 +177,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 🛠️ 全59種類のモンスターデータ（バグ修正済）
+        // 🛠️ 全59種類のモンスターデータ
         const monsterData = {
             "ドスジャグラス": { id: 6, emoji: "🦎", color: "#aa9933" },
             "クルルヤック": { id: 7, emoji: "🦖", color: "#cc9966" },
@@ -289,12 +292,22 @@
                 const iconWrapper = document.createElement("div");
                 iconWrapper.className = "monster-icon-wrapper";
                 iconWrapper.style.backgroundColor = iconData.color;
-                iconWrapper.innerText = iconData.emoji;
+                
+                // 🎨 【重なり対策】絵文字を専用の文字要素として作成
+                const emojiSpan = document.createElement("span");
+                emojiSpan.innerText = iconData.emoji;
+                iconWrapper.appendChild(emojiSpan);
                 
                 const img = document.createElement("img");
                 img.src = `monster_${iconData.id}.png`;
-                img.onload = () => { img.style.display = 'block'; }; 
-                img.onerror = () => { img.style.display = 'none'; };  
+                img.onload = () => { 
+                    img.style.display = 'block'; 
+                    emojiSpan.style.display = 'none'; // 🚀 画像の読み込みに成功したら、後ろの絵文字を消す！
+                }; 
+                img.onerror = () => { 
+                    img.style.display = 'none'; 
+                    emojiSpan.style.display = 'inline'; // 画像がまだ無いときは絵文字を出す
+                };  
                 
                 iconWrapper.appendChild(img);
                 card.appendChild(iconWrapper);
@@ -395,7 +408,7 @@
                     return `<span class="tag active">${iconData.emoji} ${m} (${formatStars(star)})</span>`;
                 }).join("");
                 
-                if (wantedMonsters.length === 0) tagsHtml = "<span class='tag'>特になし（いつでもOK！）</span>";
+                if (wantedMonsters.length === 0) tagsHtml = "<span class='tag'>特なし（いつでもOK！）</span>";
 
                 friendDiv.innerHTML = `
                     <div class="friend-name">👥 ${userMap[userKey]} が今探してるボス</div>
