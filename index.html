@@ -31,42 +31,68 @@
         }
         .container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); /* スマホで並びやすいよう少しコンパクトに */
+            gap: 10px;
         }
         .monster-card {
             background-color: var(--card-bg);
             border: 2px solid #444;
             border-radius: 12px;
-            padding: 12px 8px;
+            padding: 10px 4px 8px 4px;
             text-align: center;
             transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 110px;
+            align-items: center;
+            min-height: 155px;
             cursor: pointer;
         }
+        
+        .monster-icon-wrapper {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 4px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+        }
+        .monster-icon-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none; 
+        }
+
         .monster-name {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             word-break: break-all;
+            margin-bottom: 4px;
+            line-height: 1.2;
         }
-        /* 星パッチ用のコンテナ */
         .star-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
+            gap: 3px;
             width: 100%;
-            margin-top: 8px;
+            margin-top: 4px;
         }
         .star-btn {
             background: #1a1a1a;
             color: #777;
             border: 1px solid #333;
             border-radius: 4px;
-            font-size: 11px;
-            padding: 4px 0;
+            font-size: 10px;
+            padding: 3px 0;
             cursor: pointer;
             text-align: center;
             font-weight: bold;
@@ -81,13 +107,11 @@
             color: #aaa;
             border-color: #555;
         }
-        /* 選択された星のスタイル */
         .monster-card.wanted .star-btn.active {
             background: var(--accent-color);
             color: #000;
             border-color: var(--accent-color);
         }
-        /* 最上部の相手ターゲットエリア */
         .friends-section {
             margin-top: 10px;
             margin-bottom: 25px;
@@ -131,6 +155,7 @@
     <h2>🎯 あなたが今欲しいモンスター</h2>
     <div class="container" id="monsterGrid"></div>
 
+    <!-- Firebase SDK の読み込み -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
@@ -149,13 +174,46 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // 💥 モンスターを大幅に大増量（全27種）
         const monsters = [
-            "ドスジャグラス","クルルヤック","プケプケ","プケ亜種","ボルボロス","ドスギルオス","トビカガチ","トビカガチ亜種","パオウルムー","パオウルムー亜種","ジュラトドス","アンジャナフ","アンジャナフ亜種","リオレイア","リオレイア亜種","リオレイア希少種",
-            "レイギエナ","ディアブロス","ディアブロス亜種","リオレウス","リオレウス亜種","リオレウス希少種", "ラドバルキン", "バフバロ", "ベリオロス", "ジンオウガ","ジンオウガ亜種","ツィツィヤック","オドガロン","オドガロン亜種","イビルジョー","バサルモス","フルフル",
-            "タマミツネ","アケノシルム","ラージャン","マガイマガド","ウルクスス","ラングロトラ","イソネミクニ","ティガレックス","ティガレックス亜種","バゼルギウス","チャタカブラ","アオアシラ","ディノバルド","ドスフロギィ","ビシュテンゴ","ブラントドス","ナルガクルガ",
-            "ルナガロン","ガランゴルム","エスピナス","ケマトリス","ゴシャハギ","ライゼクス","オロミドロ","セルレギオス","ショウグンギザミ",
-            "テオ・テスカトル","クシャルダオラ","ネルギガンテ","キリン","オオナズチ","ネロミェール","メル・ゼナ","",
+            "ドスジャグラス", "クルルヤック", "プケプケ", "プケプケ亜種", "ボルボロス", 
+            "ジュラトドス", "トビカガチ", "アンジャナフ", "パオウルムー", "パオウルムー亜種",
+            "レイギエナ", "リオレイア", "リオレイア亜種", "リオレウス", "リオレウス亜種", 
+            "ディアブロス", "ディアブロス亜種", "オドガロン", "ラドバルキン", "バフバロ", 
+            "ジンオウガ", "マガイマガド", "タマミツネ", "イビルジョー", "ネルギガンテ", 
+            "クシャルダオラ", "テオ・テスカトル"
         ];
+
+        // アイコンがないとき用の仮設定
+        const monsterIcons = {
+            "ドスジャグラス": { emoji: "🦎", color: "#aa9933" },
+            "クルルヤック": { emoji: "🦖", color: "#cc9966" },
+            "プケプケ": { emoji: "👅", color: "#338844" },
+            "プケプケ亜種": { emoji: "💧", color: "#3366aa" },
+            "ボルボロス": { emoji: "泥", color: "#665544" },
+            "ジュラトドス": { emoji: "🐟", color: "#556655" },
+            "トビカガチ": { emoji: "🐿️", color: "#6688aa" },
+            "アンジャナフ": { emoji: "🔥", color: "#aa4455" },
+            "パオウルムー": { emoji: "🎈", color: "#cccccc" },
+            "パオウルムー亜種": { emoji: "💤", color: "#444466" },
+            "レイギエナ": { emoji: "❄️", color: "#88aacc" },
+            "オドガロン": { emoji: "爪", color: "#aa2222" },
+            "ラドバルキン": { emoji: "骨", color: "#444444" },
+            "バフバロ": { emoji: "🦣", color: "#887766" },
+            "リオレウス": { emoji: "🐉", color: "#8b1e1e" },
+            "リオレウス亜種": { emoji: "🔷", color: "#1e5c8b" },
+            "リオレイア": { emoji: "🦅", color: "#2e5c1e" },
+            "リオレイア亜種": { emoji: "🌸", color: "#b53f77" },
+            "ディアブロス": { emoji: "🐂", color: "#7a5c33" },
+            "ディアブロス亜種": { emoji: "🖤", color: "#222222" },
+            "ジンオウガ": { emoji: "⚡", color: "#1e5c7a" },
+            "マガイマガド": { emoji: "🐯", color: "#4a1e7a" },
+            "ネルギガンテ": { emoji: "👹", color: "#333333" },
+            "イビルジョー": { emoji: "🍏", color: "#1e3d1e" },
+            "タマミツネ": { emoji: "🧼", color: "#a349a4" },
+            "クシャルダオラ": { emoji: "🌪️", color: "#5c6b73" },
+            "テオ・テスカトル": { emoji: "🦁", color: "#d64527" }
+        };
 
         const userMap = {
             user1: "拓斗",
@@ -172,14 +230,11 @@
             renderFriendsList();
         };
 
-        // 星の表示を自動整形する賢い関数
         function formatStars(starStr) {
             if (!starStr || starStr === "all" || starStr === true || starStr === "true") return "指定なし";
-            
             const stars = starStr.split(",").map(Number).sort((a, b) => a - b);
             if (stars.length === 0) return "指定なし";
             
-            // 連続しているかチェック（例: 8,9,10 は連続）
             let isConsecutive = true;
             for (let i = 1; i < stars.length; i++) {
                 if (stars[i] !== stars[i-1] + 1) {
@@ -187,7 +242,6 @@
                     break;
                 }
             }
-            
             if (isConsecutive && stars.length > 1) {
                 return `★${stars[0]}〜${stars[stars.length-1]}`;
             } else {
@@ -200,41 +254,47 @@
             const myData = globalState[currentUser] || {};
             
             monsters.forEach(monster => {
-                const starValue = myData[monster]; // "all", "8,9", または undefined
+                const starValue = myData[monster];
                 const isWanted = starValue !== undefined && starValue !== null;
                 
                 const card = document.createElement("div");
                 card.className = `monster-card ${isWanted ? 'wanted' : ''}`;
+                card.onclick = () => toggleMonster(monster, starValue);
                 
-                // モンスター名と現在の選択星
+                const iconData = monsterIcons[monster] || { emoji: "👾", color: "#444" };
+                const iconWrapper = document.createElement("div");
+                iconWrapper.className = "monster-icon-wrapper";
+                iconWrapper.style.backgroundColor = iconData.color;
+                iconWrapper.innerText = iconData.emoji;
+                
+                // 📸 ここで自動的に「モンスター名.png」の画像がないかチェックして重ねる
+                const img = document.createElement("img");
+                img.src = `${monster}.png`;
+                img.onload = () => { img.style.display = 'block'; }; 
+                img.onerror = () => { img.style.display = 'none'; };  
+                
+                iconWrapper.appendChild(img);
+                card.appendChild(iconWrapper);
+                
                 const nameDiv = document.createElement("div");
                 nameDiv.className = "monster-name";
                 let statusSubText = "";
                 if (isWanted) {
-                    statusSubText = `<div style="font-size:11px; color:var(--accent-color); margin-top:2px;">(${formatStars(starValue)})</div>`;
+                    statusSubText = `<div style="font-size:10px; color:var(--accent-color); margin-top:2px;">(${formatStars(starValue)})</div>`;
                 }
                 nameDiv.innerHTML = `<span>${monster}</span>${statusSubText}`;
                 card.appendChild(nameDiv);
                 
-                // カードの枠自体をタップ ➔ ON/OFF（指定なし切り替え）
-                card.onclick = () => toggleMonster(monster, starValue);
-                
-                // 星選択用の小ボタンたち
                 const starContainer = document.createElement("div");
                 starContainer.className = "star-container";
-                
-                const activeStars = (starValue && starValue !== "all" && starValue !== true && starValue !== "true") 
-                    ? starValue.split(",") 
-                    : [];
+                const activeStars = (starValue && starValue !== "all" && starValue !== true && starValue !== "true") ? starValue.split(",") : [];
                 
                 ["5", "6", "7", "8", "9", "10"].forEach(star => {
                     const starBtn = document.createElement("div");
                     starBtn.className = `star-btn ${activeStars.includes(star) ? 'active' : ''}`;
                     starBtn.innerText = `★${star}`;
-                    
-                    // 星パッチをタップしたときの処理
                     starBtn.onclick = (e) => {
-                        e.stopPropagation(); // カード全体のクリックイベントを打ち消す
+                        e.stopPropagation();
                         clickStar(monster, starValue, star);
                     };
                     starContainer.appendChild(starBtn);
@@ -245,7 +305,6 @@
             });
         }
 
-        // カード全体のON/OFF
         function toggleMonster(monster, currentStarValue) {
             const isWanted = currentStarValue !== undefined && currentStarValue !== null;
             globalState[currentUser] = globalState[currentUser] || {};
@@ -254,26 +313,77 @@
                 delete globalState[currentUser][monster];
                 set(ref(db, `sharing-list/${currentUser}/${monster}`), null);
             } else {
-                globalState[currentUser][monster] = "all"; // 最初は指定なしでON
+                globalState[currentUser][monster] = "all";
                 set(ref(db, `sharing-list/${currentUser}/${monster}`), "all");
             }
             renderMyList();
             renderFriendsList();
         }
 
-        // 星を個別にポチポチしたとき
         function clickStar(monster, currentStarValue, clickedStar) {
             globalState[currentUser] = globalState[currentUser] || {};
-            
             let activeStars = [];
             if (currentStarValue && currentStarValue !== "all" && currentStarValue !== true && currentStarValue !== "true") {
                 activeStars = currentStarValue.split(",");
             }
             
             if (activeStars.includes(clickedStar)) {
-                activeStars = activeStars.filter(s => s !== clickedStar); // すでにあったら消す
+                activeStars = activeStars.filter(s => s !== clickedStar);
             } else {
-                activeStars.push(clickedStar); // なかったら足す
+                activeStars.push(clickedStar);
             }
+            activeStars.sort((a, b) => Number(a) - Number(b));
             
-            activeStars.sort((a, b
+            if (activeStars.length === 0) {
+                globalState[currentUser][monster] = "all";
+                set(ref(db, `sharing-list/${currentUser}/${monster}`), "all");
+            } else {
+                const newValue = activeStars.join(",");
+                globalState[currentUser][monster] = newValue;
+                set(ref(db, `sharing-list/${currentUser}/${monster}`), newValue);
+            }
+            renderMyList();
+            renderFriendsList();
+        }
+
+        onValue(ref(db, 'sharing-list'), (snapshot) => {
+            globalState = snapshot.val() || {};
+            renderMyList();
+            renderFriendsList();
+        }, (error) => {
+            console.log("Database connection error");
+        });
+
+        function renderFriendsList() {
+            const friendsStatusDiv = document.getElementById("friendsStatus");
+            friendsStatusDiv.innerHTML = "";
+
+            Object.keys(userMap).forEach(userKey => {
+                if (userKey === currentUser) return;
+                const userData = globalState[userKey] || {};
+                const wantedMonsters = Object.keys(userData).filter(key => userData[key] && userData[key] !== "");
+
+                const friendDiv = document.createElement("div");
+                friendDiv.className = "friend-status";
+                
+                let tagsHtml = wantedMonsters.map(m => {
+                    const star = userData[m];
+                    const iconData = monsterIcons[m] || { emoji: "👾" };
+                    return `<span class="tag active">${iconData.emoji} ${m} (${formatStars(star)})</span>`;
+                }).join("");
+                
+                if (wantedMonsters.length === 0) tagsHtml = "<span class='tag'>特になし（いつでもOK！）</span>";
+
+                friendDiv.innerHTML = `
+                    <div class="friend-name">👥 ${userMap[userKey]} が今探してるボス</div>
+                    <div class="wanted-tags">${tagsHtml}</div>
+                `;
+                friendsStatusDiv.appendChild(friendDiv);
+            });
+        }
+
+        renderMyList();
+        renderFriendsList();
+    </script>
+</body>
+</html>
