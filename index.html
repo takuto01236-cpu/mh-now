@@ -174,7 +174,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 🛠️ いただいた全59種類のモンスターデータ（画像番号・仮絵文字・仮背景色）
+        // 🛠️ 全59種類のモンスターデータ（バグ修正済）
         const monsterData = {
             "ドスジャグラス": { id: 6, emoji: "🦎", color: "#aa9933" },
             "クルルヤック": { id: 7, emoji: "🦖", color: "#cc9966" },
@@ -217,7 +217,7 @@
             "ラングロトラ": { id: 45, emoji: "🪀", color: "#aa4433" },
             "イソネミクニ": { id: 46, emoji: "🧜", color: "#445588" },
             "ティガレックス": { id: 47, emoji: "轟", color: "#cc7733" },
-            "ティガレックス亜種": { id: 64, emoji: "黒", color: Blackカラー },
+            "ティガレックス亜種": { id: 64, emoji: "黒", color: "#222222" },
             "バゼルギウス": { id: 49, emoji: "💣", color: "#665544" },
             "チャタカブラ": { id: 50, emoji: "🐸", color: "#557744" },
             "アオアシラ": { id: 51, emoji: "🐻", color: "#445533" },
@@ -291,7 +291,6 @@
                 iconWrapper.style.backgroundColor = iconData.color;
                 iconWrapper.innerText = iconData.emoji;
                 
-                // 🚀 【大改造】monster_18.png のように、登録した番号の名前で自動読み込みする処理
                 const img = document.createElement("img");
                 img.src = `monster_${iconData.id}.png`;
                 img.onload = () => { img.style.display = 'block'; }; 
