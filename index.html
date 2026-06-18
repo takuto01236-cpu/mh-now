@@ -159,6 +159,7 @@
     <h2>🎯 あなたが今欲しいモンスター</h2>
     <div class="container" id="monsterGrid"></div>
 
+    <!-- Firebase SDK の読み込み -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
@@ -293,7 +294,6 @@
                 iconWrapper.className = "monster-icon-wrapper";
                 iconWrapper.style.backgroundColor = iconData.color;
                 
-                // 🎨 【重なり対策】絵文字を専用の文字要素として作成
                 const emojiSpan = document.createElement("span");
                 emojiSpan.innerText = iconData.emoji;
                 iconWrapper.appendChild(emojiSpan);
@@ -302,11 +302,11 @@
                 img.src = `monster_${iconData.id}.png`;
                 img.onload = () => { 
                     img.style.display = 'block'; 
-                    emojiSpan.style.display = 'none'; // 🚀 画像の読み込みに成功したら、後ろの絵文字を消す！
+                    emojiSpan.style.display = 'none'; 
                 }; 
                 img.onerror = () => { 
                     img.style.display = 'none'; 
-                    emojiSpan.style.display = 'inline'; // 画像がまだ無いときは絵文字を出す
+                    emojiSpan.style.display = 'inline'; 
                 };  
                 
                 iconWrapper.appendChild(img);
@@ -402,13 +402,13 @@
                 const friendDiv = document.createElement("div");
                 friendDiv.className = "friend-status";
                 
+                // 🚀 【修正箇所】上のタグから絵文字（iconData.emoji）を完全に非表示にしました！
                 let tagsHtml = wantedMonsters.map(m => {
                     const star = userData[m];
-                    const iconData = monsterData[m] || { emoji: "👾" };
-                    return `<span class="tag active">${iconData.emoji} ${m} (${formatStars(star)})</span>`;
+                    return `<span class="tag active">${m} (${formatStars(star)})</span>`;
                 }).join("");
                 
-                if (wantedMonsters.length === 0) tagsHtml = "<span class='tag'>特なし（いつでもOK！）</span>";
+                if (wantedMonsters.length === 0) tagsHtml = "<span class='tag'>特になし（いつでもOK！）</span>";
 
                 friendDiv.innerHTML = `
                     <div class="friend-name">👥 ${userMap[userKey]} が今探してるボス</div>
