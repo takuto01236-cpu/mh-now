@@ -31,7 +31,7 @@
         }
         .container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); /* スマホで並びやすいよう少しコンパクトに */
+            grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
             gap: 10px;
         }
         .monster-card {
@@ -174,46 +174,70 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 💥 モンスターを大幅に大増量（全27種）
-        const monsters = [
-            "ドスジャグラス", "クルルヤック", "プケプケ", "プケプケ亜種", "ボルボロス", 
-            "ジュラトドス", "トビカガチ", "アンジャナフ", "パオウルムー", "パオウルムー亜種",
-            "レイギエナ", "リオレイア", "リオレイア亜種", "リオレウス", "リオレウス亜種", 
-            "ディアブロス", "ディアブロス亜種", "オドガロン", "ラドバルキン", "バフバロ", 
-            "ジンオウガ", "マガイマガド", "タマミツネ", "イビルジョー", "ネルギガンテ", 
-            "クシャルダオラ", "テオ・テスカトル"
-        ];
-
-        // アイコンがないとき用の仮設定
-        const monsterIcons = {
-            "ドスジャグラス": { emoji: "🦎", color: "#aa9933" },
-            "クルルヤック": { emoji: "🦖", color: "#cc9966" },
-            "プケプケ": { emoji: "👅", color: "#338844" },
-            "プケプケ亜種": { emoji: "💧", color: "#3366aa" },
-            "ボルボロス": { emoji: "泥", color: "#665544" },
-            "ジュラトドス": { emoji: "🐟", color: "#556655" },
-            "トビカガチ": { emoji: "🐿️", color: "#6688aa" },
-            "アンジャナフ": { emoji: "🔥", color: "#aa4455" },
-            "パオウルムー": { emoji: "🎈", color: "#cccccc" },
-            "パオウルムー亜種": { emoji: "💤", color: "#444466" },
-            "レイギエナ": { emoji: "❄️", color: "#88aacc" },
-            "オドガロン": { emoji: "爪", color: "#aa2222" },
-            "ラドバルキン": { emoji: "骨", color: "#444444" },
-            "バフバロ": { emoji: "🦣", color: "#887766" },
-            "リオレウス": { emoji: "🐉", color: "#8b1e1e" },
-            "リオレウス亜種": { emoji: "🔷", color: "#1e5c8b" },
-            "リオレイア": { emoji: "🦅", color: "#2e5c1e" },
-            "リオレイア亜種": { emoji: "🌸", color: "#b53f77" },
-            "ディアブロス": { emoji: "🐂", color: "#7a5c33" },
-            "ディアブロス亜種": { emoji: "🖤", color: "#222222" },
-            "ジンオウガ": { emoji: "⚡", color: "#1e5c7a" },
-            "マガイマガド": { emoji: "🐯", color: "#4a1e7a" },
-            "ネルギガンテ": { emoji: "👹", color: "#333333" },
-            "イビルジョー": { emoji: "🍏", color: "#1e3d1e" },
-            "タマミツネ": { emoji: "🧼", color: "#a349a4" },
-            "クシャルダオラ": { emoji: "🌪️", color: "#5c6b73" },
-            "テオ・テスカトル": { emoji: "🦁", color: "#d64527" }
+        // 🛠️ いただいた全59種類のモンスターデータ（画像番号・仮絵文字・仮背景色）
+        const monsterData = {
+            "ドスジャグラス": { id: 6, emoji: "🦎", color: "#aa9933" },
+            "クルルヤック": { id: 7, emoji: "🦖", color: "#cc9966" },
+            "プケプケ": { id: 8, emoji: "👅", color: "#338844" },
+            "プケプケ亜種": { id: 31, emoji: "💧", color: "#3366aa" },
+            "ボルボロス": { id: 9, emoji: "泥", color: "#665544" },
+            "ドスギルオス": { id: 10, emoji: "🐍", color: "#444444" },
+            "トビカガチ": { id: 11, emoji: "🐿️", color: "#6688aa" },
+            "トビカガチ亜種": { id: 69, emoji: "🦅", color: "#443355" },
+            "パオウルムー": { id: 12, emoji: "🎈", color: "#cccccc" },
+            "パオウルムー亜種": { id: 36, emoji: "💤", color: "#444466" },
+            "ジュラトドス": { id: 13, emoji: "🐟", color: "#556655" },
+            "アンジャナフ": { id: 14, emoji: "🔥", color: "#aa4455" },
+            "アンジャナフ亜種": { id: 60, emoji: "⚡", color: "#cc88aa" },
+            "リオレイア": { id: 15, emoji: "🦅", color: "#2e5c1e" },
+            "リオレイア亜種": { id: 20, emoji: "🌸", color: "#b53f77" },
+            "リオレイア希少種": { id: 42, emoji: "✨", color: "#ccaa44" },
+            "レイギエナ": { id: 16, emoji: "❄️", color: "#88aacc" },
+            "ディアブロス": { id: 17, emoji: "🐂", color: "#7a5c33" },
+            "ディアブロス亜種": { id: 19, emoji: "🖤", color: "#222222" },
+            "リオレウス": { id: 18, emoji: "🐉", color: "#8b1e1e" },
+            "リオレウス亜種": { id: 27, emoji: "🔷", color: "#1e5c8b" },
+            "リオレウス希少種": { id: 43, emoji: "🌟", color: "#ddddee" },
+            "ラドバルキン": { id: 21, emoji: "骨", color: "#444444" },
+            "バフバロ": { id: 22, emoji: "🦣", color: "#887766" },
+            "ベリオロス": { id: 23, emoji: "🐅", color: "#ddeeff" },
+            "ジンオウガ": { id: 24, emoji: "⚡", color: "#1e5c7a" },
+            "ジンオウガ亜種": { id: 72, emoji: "😈", color: "#551a1a" },
+            "ツィツィヤック": { id: 28, emoji: "📸", color: "#556677" },
+            "オドガロン": { id: 29, emoji: "爪", color: "#aa2222" },
+            "オドガロン亜種": { id: 53, emoji: "💀", color: "#331111" },
+            "イビルジョー": { id: 30, emoji: "🍏", color: "#1e3d1e" },
+            "バサルモス": { id: 33, emoji: "岩", color: "#777777" },
+            "フルフル": { id: 32, emoji: "🔌", color: "#eeeeee" },
+            "タマミツネ": { id: 35, emoji: "🧼", color: "#a349a4" },
+            "アケノシルム": { id: 38, emoji: "傘", color: "#cc4444" },
+            "ラージャン": { id: 40, emoji: "🦍", color: "#cc9933" },
+            "マガイマガド": { id: 39, emoji: "🐯", color: "#4a1e7a" },
+            "ウルクスス": { id: 44, emoji: "🐰", color: "#ffffff" },
+            "ラングロトラ": { id: 45, emoji: "🪀", color: "#aa4433" },
+            "イソネミクニ": { id: 46, emoji: "🧜", color: "#445588" },
+            "ティガレックス": { id: 47, emoji: "轟", color: "#cc7733" },
+            "ティガレックス亜種": { id: 64, emoji: "黒", color: Blackカラー },
+            "バゼルギウス": { id: 49, emoji: "💣", color: "#665544" },
+            "チャタカブラ": { id: 50, emoji: "🐸", color: "#557744" },
+            "アオアシラ": { id: 51, emoji: "🐻", color: "#445533" },
+            "ディノバルド": { id: 52, emoji: "🪓", color: "#aa3333" },
+            "ドスフロギィ": { id: 55, emoji: "🧪", color: "#cc6633" },
+            "ビシュテンゴ": { id: 56, emoji: "柿", color: "#aa8844" },
+            "ブラントドス": { id: 57, emoji: "🦈", color: "#667788" },
+            "ナルガクルガ": { id: 58, emoji: "🥷", color: "#222233" },
+            "ルナガロン": { id: 61, emoji: "🐺", color: "#335577" },
+            "ガランゴル": { id: 62, emoji: "🧱", color: "#555544" },
+            "エスピナス": { id: 63, emoji: "🌵", color: "#335533" },
+            "ケマトリス": { id: 66, emoji: "🐓", color: "#cc5533" },
+            "ゴシャハギ": { id: 67, emoji: "👹", color: "#446688" },
+            "ライゼクス": { id: 68, emoji: "🦟", color: "#557722" },
+            "オロミドロ": { id: 70, emoji: "🪵", color: "#443322" },
+            "セルレギオス": { id: 71, emoji: "🛩️", color: "#bb9944" },
+            "ショウグンギザミ": { id: 73, emoji: "🦀", color: "#3355aa" }
         };
+
+        const monsters = Object.keys(monsterData);
 
         const userMap = {
             user1: "拓斗",
@@ -261,15 +285,15 @@
                 card.className = `monster-card ${isWanted ? 'wanted' : ''}`;
                 card.onclick = () => toggleMonster(monster, starValue);
                 
-                const iconData = monsterIcons[monster] || { emoji: "👾", color: "#444" };
+                const iconData = monsterData[monster] || { id: 0, emoji: "👾", color: "#444" };
                 const iconWrapper = document.createElement("div");
                 iconWrapper.className = "monster-icon-wrapper";
                 iconWrapper.style.backgroundColor = iconData.color;
                 iconWrapper.innerText = iconData.emoji;
                 
-                // 📸 ここで自動的に「モンスター名.png」の画像がないかチェックして重ねる
+                // 🚀 【大改造】monster_18.png のように、登録した番号の名前で自動読み込みする処理
                 const img = document.createElement("img");
-                img.src = `${monster}.png`;
+                img.src = `monster_${iconData.id}.png`;
                 img.onload = () => { img.style.display = 'block'; }; 
                 img.onerror = () => { img.style.display = 'none'; };  
                 
@@ -368,7 +392,7 @@
                 
                 let tagsHtml = wantedMonsters.map(m => {
                     const star = userData[m];
-                    const iconData = monsterIcons[m] || { emoji: "👾" };
+                    const iconData = monsterData[m] || { emoji: "👾" };
                     return `<span class="tag active">${iconData.emoji} ${m} (${formatStars(star)})</span>`;
                 }).join("");
                 
